@@ -29,8 +29,8 @@ SHAPES = {
            ("gate_up", 18944, 3584), ("down", 3584, 18944)],
 }
 GROUP = 128
-CONFIGS = [dict(block_n=bn, block_k=bk, num_warps=nw)
-           for bn, bk, nw in itertools.product([16, 32, 64, 128], [32, 64, 128], [2, 4, 8])]
+CONFIGS = [dict(block_n=bn, block_k=bk, num_warps=nw, split_k=sk)
+           for bn, bk, nw, sk in itertools.product([8, 16, 32, 64, 128], [64, 128], [2, 4, 8], [1, 2, 4, 8, 16])]
 
 
 def copy_bandwidth():
@@ -61,21 +61,26 @@ def bench_shape(n, k, m):
     ms = do_bench(lambda: torch.nn.functional.linear(x, dequantize(qw, s, z, GROUP).half()))
     out["torch_dequant_matmul"] = dict(us=ms * 1e3, GBps=gbps(int4_bytes, ms))
 
-    best = None
+    # short timing for the sweep, then a full-length timing of the winners
+    sweep = []
     for cfg in CONFIGS:
         if GROUP % cfg["block_k"] or k % cfg["block_k"]:
             continue
         try:
-            ms = do_bench(lambda: int4_gemv(x, qw, s, z, GROUP, **cfg))
+            sweep.append((do_bench(lambda: int4_gemv(x, qw, s, z, GROUP, **cfg), warmup=5, rep=20), cfg))
         except Exception as e:  # out of shared memory / registers for big tiles
             print(f"  skip {cfg}: {type(e).__name__}", file=sys.stderr)
-            continue
-        if best is None or ms < best[0]:
-            best = (ms, cfg)
-    ms, cfg = best
-    y = int4_gemv(x, qw, s, z, GROUP, **cfg).float()
-    err = ((y - ref).abs().max() / ref.abs().max()).item()
-    out["triton_int4"] = dict(us=ms * 1e3, GBps=gbps(int4_bytes, ms), config=cfg, max_rel_err=err)
+    # v1 = best without split-K, v2 = best overall; both from this run on this GPU
+    for key, pool in (("triton_int4_nosplit", [c for c in sweep if c[1]["split_k"] == 1]),
+                      ("triton_int4", sweep)):
+        cfg = min(pool, key=lambda c: c[0])[1]
+        ms = do_bench(lambda: int4_gemv(x, qw, s, z, GROUP, **cfg))
+        y = int4_gemv(x, qw, s, z, GROUP, **cfg).float()
+        err = ((y - ref).abs().max() / ref.abs().max()).item()
+        steps = k // cfg["block_k"]
+        split = triton.cdiv(steps, triton.cdiv(steps, cfg["split_k"]))  # as int4_gemv clamps it
+        out[key] = dict(us=ms * 1e3, GBps=gbps(int4_bytes, ms), config=cfg, max_rel_err=err,
+                        effective_split_k=split, programs=triton.cdiv(n, cfg["block_n"]) * split * m)
     return out
 
 
@@ -84,6 +89,7 @@ def main():
     p.add_argument("--models", nargs="+", default=["1.5b", "7b"])
     p.add_argument("--m", type=int, default=1)
     p.add_argument("--out")
+    p.add_argument("--tag", default="v2", help="kernel version, used in the output file name")
     a = p.parse_args()
 
     gpu = torch.cuda.get_device_name()
@@ -91,17 +97,17 @@ def main():
     print(f"{gpu}: copy bandwidth {bw:.0f} GB/s, torch {torch.__version__}, triton {triton.__version__}")
     result = dict(gpu=gpu, copy_GBps=bw, torch=torch.__version__, triton=triton.__version__,
                   group_size=GROUP, layers={})
-    hdr = f"{'layer':<14}{'N x K':>14}{'fp16 us':>10}{'deq+mm us':>11}{'int4 us':>10}{'int4 %BW':>10}{'vs fp16':>9}"
-    print(hdr)
+    print(f"{'layer':<14}{'N x K':>13}{'fp16 us':>9}{'nosplit us':>11}{'split us':>9}"
+          f"{'split %BW':>10}{'vs fp16':>8}{'split_k':>8}")
     for model in a.models:
         for name, n, k in SHAPES[model]:
             r = bench_shape(n, k, a.m)
             result["layers"][f"{model}/{name}"] = r
-            f, t = r["fp16_cublas"], r["triton_int4"]
-            print(f"{model + '/' + name:<14}{f'{n}x{k}':>14}{f['us']:>10.1f}{r['torch_dequant_matmul']['us']:>11.1f}"
-                  f"{t['us']:>10.1f}{100 * t['GBps'] / bw:>9.0f}%{f['us'] / t['us']:>8.2f}x")
+            f, v1, t = r["fp16_cublas"], r["triton_int4_nosplit"], r["triton_int4"]
+            print(f"{model + '/' + name:<14}{f'{n}x{k}':>13}{f['us']:>9.1f}{v1['us']:>11.1f}{t['us']:>9.1f}"
+                  f"{100 * t['GBps'] / bw:>9.0f}%{f['us'] / t['us']:>7.2f}x{t['effective_split_k']:>8}", flush=True)
 
-    out = a.out or f"results/gemv_{gpu.replace(' ', '_')}_m{a.m}.json"
+    out = a.out or f"results/gemv_{gpu.replace(' ', '_')}_m{a.m}_{a.tag}.json"
     os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, "w") as f:
         json.dump(result, f, indent=2)

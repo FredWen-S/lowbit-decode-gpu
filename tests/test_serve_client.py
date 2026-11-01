@@ -61,9 +61,17 @@ def test_closed_loop_metrics(server_url):
 
 def test_periodic_background_is_tagged_and_stops(server_url):
     loop, url = server_url
+    background = [(f"y{i} y", 2) for i in range(50)]
     records, wall = loop.run_until_complete(
-        serve_client.run(url, [("x", 30)] * 4, concurrency=2, background=("y y", 2), interval=0.1))
+        serve_client.run(url, [("x", 30)] * 4, concurrency=2, background=background, interval=0.1))
     kinds = [r["kind"] for r in records]
     assert kinds.count("main") == 4
     assert 3 <= kinds.count("periodic") <= 12  # about wall / interval
     assert serve_client.summarize(records, wall, kind="periodic")["requests"] == kinds.count("periodic")
+
+
+def test_periodic_stops_when_requests_run_out(server_url):
+    loop, url = server_url
+    records, _ = loop.run_until_complete(
+        serve_client.run(url, [("x", 60)] * 2, concurrency=2, background=[("a", 2), ("b", 2)], interval=0.05))
+    assert [r["kind"] for r in records].count("periodic") == 2

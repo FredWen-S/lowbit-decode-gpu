@@ -9,7 +9,7 @@ Experiments (prompt / output lengths in tokens; prompts are random token ids):
   concurrency  in 512, out 128, closed loop at C = 1..64           -> TTFT, TPOT, throughput
   input_len    in 128 and 2048, out 128, C = 16
   prefix       1536-token shared prefix + 64 unique, out 64, C = 8 -> TTFT with/without prefix cache
-  mixed        8 streams of in 128 / out 512, plus a 3072-token prompt every 2 s
+  mixed        8 streams of in 128 / out 512, plus a new 3072-token prompt every 2 s
                -> decode stalls (TPOT, inter-token p99) under small vs large prefill chunks
 
 usage:
@@ -144,8 +144,9 @@ def experiment_points(name, P, quick):
         yield "shared1536", [(p, 64) for p in P.make(n(64), 64, prefix=prefix)], 8, None, None
     elif name == "mixed":
         shorts = [(p, 512) for p in P.make(n(24), 128)]
-        long_prompt = P.make(1, 3072)[0]
-        yield "mixed", shorts, 8, (long_prompt, 16), 2.0
+        # a fresh long prompt per arrival; one repeated prompt is a prefix-cache hit after the first
+        longs = [(p, 16) for p in P.make(40, 3072)]
+        yield "mixed", shorts, 8, longs, 2.0
 
 
 def main():

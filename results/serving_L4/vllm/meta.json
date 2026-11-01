@@ -1,0 +1,38 @@
+{
+  "engine": "vllm",
+  "version": "0.32.0",
+  "model": "/content/models/qwen2.5-1.5b-instruct",
+  "mem_fraction": 0.85,
+  "max_len": 4096,
+  "quick": false,
+  "configs": {
+    "default": {
+      "flags": [],
+      "startup_s": 48.04181432723999,
+      "gpu_mem_used_mib": 19376
+    },
+    "nocache": {
+      "flags": [
+        "--no-enable-prefix-caching"
+      ],
+      "startup_s": 48.010151624679565,
+      "gpu_mem_used_mib": 19376
+    },
+    "chunk512": {
+      "flags": [
+        "--max-num-batched-tokens",
+        "512"
+      ],
+      "startup_s": 48.01034688949585,
+      "gpu_mem_used_mib": 19378
+    },
+    "chunk4096": {
+      "flags": [
+        "--max-num-batched-tokens",
+        "4096"
+      ],
+      "startup_s": 48.012004137039185,
+      "gpu_mem_used_mib": 19254
+    }
+  }
+}

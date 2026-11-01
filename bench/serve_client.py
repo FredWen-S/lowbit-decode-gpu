@@ -66,17 +66,20 @@ async def closed_loop(session, url, requests, concurrency, kind="main"):
     return records
 
 
-async def periodic(session, url, request, interval, stop, kind="periodic"):
-    """Send `request` every `interval` seconds (open loop) until `stop` is set."""
+async def periodic(session, url, requests, interval, stop, kind="periodic"):
+    """Send the next of `requests` every `interval` seconds (open loop) until `stop` is set or
+    the list runs out. Each arrival should be a different prompt: repeating one prompt would
+    let the prefix cache serve every arrival after the first."""
     records, tasks = [], []
+    pending = list(requests)
 
-    async def one():
+    async def one(request):
         r = await stream_request(session, url, *request)
         r["kind"] = kind
         records.append(r)
 
-    while not stop.is_set():
-        tasks.append(asyncio.create_task(one()))
+    while not stop.is_set() and pending:
+        tasks.append(asyncio.create_task(one(pending.pop(0))))
         try:
             await asyncio.wait_for(stop.wait(), timeout=interval)
         except asyncio.TimeoutError:
@@ -86,7 +89,7 @@ async def periodic(session, url, request, interval, stop, kind="periodic"):
 
 
 async def run(url, requests, concurrency, background=None, interval=None):
-    """Run a closed-loop workload, optionally with a periodic background request alongside."""
+    """Run a closed-loop workload, optionally with periodic background requests alongside."""
     timeout = aiohttp.ClientTimeout(total=3600)
     connector = aiohttp.TCPConnector(limit=0)
     async with aiohttp.ClientSession(timeout=timeout, connector=connector) as session:

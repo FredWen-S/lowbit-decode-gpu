@@ -1,0 +1,38 @@
+{
+  "engine": "sglang",
+  "version": "0.5.23",
+  "model": "/content/models/qwen2.5-1.5b-instruct",
+  "mem_fraction": 0.85,
+  "max_len": 4096,
+  "quick": false,
+  "configs": {
+    "default": {
+      "flags": [],
+      "startup_s": 48.010196924209595,
+      "gpu_mem_used_mib": 20659
+    },
+    "nocache": {
+      "flags": [
+        "--disable-radix-cache"
+      ],
+      "startup_s": 48.01038455963135,
+      "gpu_mem_used_mib": 20679
+    },
+    "chunk512": {
+      "flags": [
+        "--chunked-prefill-size",
+        "512"
+      ],
+      "startup_s": 42.00964283943176,
+      "gpu_mem_used_mib": 20323
+    },
+    "chunk4096": {
+      "flags": [
+        "--chunked-prefill-size",
+        "4096"
+      ],
+      "startup_s": 48.01105809211731,
+      "gpu_mem_used_mib": 20659
+    }
+  }
+}

@@ -12,7 +12,13 @@ On a Cortex-A53 phone the answer was "not below 4 bits", because unpacking int4 
    - **What explains it:** bytes in flight. More programs and wider tiles both raise it.
    - **Still open:** large layers stop at about 50–57% of copy bandwidth, against 3.8× ideal. Nsight Compute is next.
    - Predictions were written before each run, and the results were scored against them.
-2. **vLLM vs SGLang serving benchmark.** Will measure TTFT, TPOT, throughput and memory, sweeping concurrency and prompt length, with prefix caching and chunked prefill on and off. Not started.
+2. **vLLM vs SGLang serving benchmark.** Qwen2.5-1.5B on an L4, both engines measured by the same load generator. Four experiments:
+   - concurrency 1–64;
+   - prompt length;
+   - prefix caching on and off;
+   - small vs large prefill chunks under a mixed workload.
+
+   The harness is tested against a fake server, and the predictions are in [`predictions_serving_2026-11-01.md`](predictions_serving_2026-11-01.md). The GPU run is pending.
 3. **FP16 vs AWQ / GPTQ int4 (FP8 on L4).** Will cover speed and accuracy, reusing the A53 eval sets. Not started.
 
 ## Layout
@@ -24,6 +30,10 @@ On a Cortex-A53 phone the answer was "not below 4 bits", because unpacking int4 
 | [`tests/`](tests/) | Correctness tests: pack round-trip, quantization error bound, and kernel vs reference over several shapes |
 | [`bench/bench_gemv.py`](bench/bench_gemv.py) | Times fp16 cuBLAS, PyTorch dequantize-then-matmul, and the Triton kernel (with a config sweep) on every decode linear layer of Qwen2.5-1.5B and -7B. Reports bandwidth against the GPU's measured copy bandwidth |
 | [`colab/gemv_bench.ipynb`](colab/gemv_bench.ipynb) | Runs the tests and the benchmark on a Colab GPU |
+| [`bench/serve_client.py`](bench/serve_client.py) | Engine-neutral streaming load generator: closed-loop concurrency plus an optional periodic background request. Records TTFT, TPOT, inter-token gaps and server-reported token counts |
+| [`bench/serve_sweep.py`](bench/serve_sweep.py) | Starts vLLM or SGLang (each from its own virtualenv) with each config, runs the experiments and stops the server. Writes one JSON per experiment point |
+| [`tests/fake_engine/`](tests/fake_engine/) | A stand-in `vllm` server for dry-running the sweep without a GPU |
+| [`colab/serving_bench.ipynb`](colab/serving_bench.ipynb) | Installs both engines and runs the smoke test and the full sweep on Colab |
 
 ## Running
 

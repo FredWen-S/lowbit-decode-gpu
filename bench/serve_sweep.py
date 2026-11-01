@@ -69,9 +69,13 @@ def server_cmd(engine, python, model):
 
 
 def engine_version(engine, python):
+    """The engine's version string, or None if it cannot be imported from that Python."""
     out = subprocess.run([python, "-c", f"import {engine}; print({engine}.__version__)"],
                          capture_output=True, text=True)
-    return out.stdout.strip() or out.stderr.strip()[-200:]
+    if out.returncode != 0:
+        print(f"!! {engine} cannot be imported from {python}:\n{out.stderr.strip()[-1500:]}", flush=True)
+        return None
+    return out.stdout.strip()
 
 
 def wait_ready(proc, log_path, timeout=900):
@@ -156,9 +160,14 @@ def main():
     P = Prompts(a.model)
     url = f"http://127.0.0.1:{PORT}/v1/completions"
 
+    failures = []
     for engine, python in pythons.items():
         meta = {"engine": engine, "version": engine_version(engine, python), "model": a.model,
                 "mem_fraction": MEM, "max_len": MAX_LEN, "quick": a.quick, "configs": {}}
+        os.makedirs(os.path.join(a.out, engine), exist_ok=True)
+        if meta["version"] is None:
+            failures.append(f"{engine}: not importable")
+            continue
         print(f"== {engine} {meta['version']}", flush=True)
         for config in a.configs:
             out_dir = os.path.join(a.out, engine, config)
@@ -190,10 +199,20 @@ def main():
                         print(f"   {exp:<12}{point:<11} {s['output_tok_per_s']:8.0f} tok/s  "
                               f"TTFT p50 {s['ttft_p50_ms']:7.0f} ms  TPOT p50 {s['tpot_p50_ms']:6.1f} ms  "
                               f"ITL p99 {s['itl_p99_ms']:6.1f} ms", flush=True)
+            except Exception as e:  # one bad config should not cost the rest of the run
+                msg = f"{engine}/{config}: {type(e).__name__}: {e}"
+                print(f"!! {msg}\n   last lines of {log_path}:", flush=True)
+                with open(log_path) as f:
+                    print("".join(f.readlines()[-15:]), flush=True)
+                meta["configs"].setdefault(config, {})["error"] = msg
+                failures.append(msg)
             finally:
                 stop(proc)
         with open(os.path.join(a.out, engine, "meta.json"), "w") as f:
             json.dump(meta, f, indent=2)
+    if failures:
+        print("\nFAILED:\n  " + "\n  ".join(failures), flush=True)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

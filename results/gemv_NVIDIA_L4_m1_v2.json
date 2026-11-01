@@ -1,0 +1,399 @@
+{
+  "gpu": "NVIDIA L4",
+  "copy_GBps": 230.91511382976228,
+  "torch": "2.11.0+cu130",
+  "triton": "3.6.0",
+  "group_size": 128,
+  "layers": {
+    "1.5b/q_proj": {
+      "N": 1536,
+      "K": 1536,
+      "M": 1,
+      "fp16_cublas": {
+        "us": 35.74195833123745,
+        "GBps": 132.1901826479025
+      },
+      "torch_dequant_matmul": {
+        "us": 176.5620699700187,
+        "GBps": 7.029188093517164
+      },
+      "triton_int4_nosplit": {
+        "us": 29.706779181172973,
+        "GBps": 41.77793871328045,
+        "config": {
+          "block_n": 8,
+          "block_k": 128,
+          "num_warps": 4,
+          "split_k": 1
+        },
+        "max_rel_err": 0.00023376333410851657,
+        "effective_split_k": 1,
+        "programs": 192
+      },
+      "triton_int4": {
+        "us": 22.096842135253706,
+        "GBps": 56.165853582306475,
+        "config": {
+          "block_n": 16,
+          "block_k": 128,
+          "num_warps": 4,
+          "split_k": 8
+        },
+        "max_rel_err": 0.00023376333410851657,
+        "effective_split_k": 6,
+        "programs": 576
+      }
+    },
+    "1.5b/kv_proj": {
+      "N": 256,
+      "K": 1536,
+      "M": 1,
+      "fp16_cublas": {
+        "us": 15.071999912227815,
+        "GBps": 52.41613618635077
+      },
+      "torch_dequant_matmul": {
+        "us": 66.74718304026511,
+        "GBps": 3.1373309023944125
+      },
+      "triton_int4_nosplit": {
+        "us": 17.979621357823675,
+        "GBps": 11.646963850486092,
+        "config": {
+          "block_n": 8,
+          "block_k": 128,
+          "num_warps": 8,
+          "split_k": 1
+        },
+        "max_rel_err": 0.00027425377629697323,
+        "effective_split_k": 1,
+        "programs": 32
+      },
+      "triton_int4": {
+        "us": 12.384673913842754,
+        "GBps": 16.90864058729377,
+        "config": {
+          "block_n": 8,
+          "block_k": 128,
+          "num_warps": 4,
+          "split_k": 16
+        },
+        "max_rel_err": 0.00027425377629697323,
+        "effective_split_k": 12,
+        "programs": 384
+      }
+    },
+    "1.5b/o_proj": {
+      "N": 1536,
+      "K": 1536,
+      "M": 1,
+      "fp16_cublas": {
+        "us": 37.24126376603779,
+        "GBps": 126.86830473000028
+      },
+      "torch_dequant_matmul": {
+        "us": 176.51388136779562,
+        "GBps": 7.031107074315531
+      },
+      "triton_int4_nosplit": {
+        "us": 29.71755823022441,
+        "GBps": 41.762785165092886,
+        "config": {
+          "block_n": 8,
+          "block_k": 128,
+          "num_warps": 4,
+          "split_k": 1
+        },
+        "max_rel_err": 0.00023376333410851657,
+        "effective_split_k": 1,
+        "programs": 192
+      },
+      "triton_int4": {
+        "us": 21.94627364607234,
+        "GBps": 56.55119497801915,
+        "config": {
+          "block_n": 8,
+          "block_k": 128,
+          "num_warps": 2,
+          "split_k": 8
+        },
+        "max_rel_err": 0.00023376333410851657,
+        "effective_split_k": 6,
+        "programs": 1152
+      }
+    },
+    "1.5b/gate_up": {
+      "N": 8960,
+      "K": 1536,
+      "M": 1,
+      "fp16_cublas": {
+        "us": 159.00576547827833,
+        "GBps": 173.2397055989964
+      },
+      "torch_dequant_matmul": {
+        "us": 2607.7988743782043,
+        "GBps": 2.770471323913991
+      },
+      "triton_int4_nosplit": {
+        "us": 64.4572897944399,
+        "GBps": 112.08712037134417,
+        "config": {
+          "block_n": 16,
+          "block_k": 128,
+          "num_warps": 2,
+          "split_k": 1
+        },
+        "max_rel_err": 0.0004263435839675367,
+        "effective_split_k": 1,
+        "programs": 560
+      },
+      "triton_int4": {
+        "us": 64.33617147386715,
+        "GBps": 112.29813391887438,
+        "config": {
+          "block_n": 16,
+          "block_k": 128,
+          "num_warps": 2,
+          "split_k": 1
+        },
+        "max_rel_err": 0.0004263435839675367,
+        "effective_split_k": 1,
+        "programs": 560
+      }
+    },
+    "1.5b/down": {
+      "N": 1536,
+      "K": 8960,
+      "M": 1,
+      "fp16_cublas": {
+        "us": 157.87254890491224,
+        "GBps": 174.48322834510782
+      },
+      "torch_dequant_matmul": {
+        "us": 2594.589630762736,
+        "GBps": 2.7845759939602104
+      },
+      "triton_int4_nosplit": {
+        "us": 133.38462740517735,
+        "GBps": 54.165402269733875,
+        "config": {
+          "block_n": 8,
+          "block_k": 128,
+          "num_warps": 4,
+          "split_k": 1
+        },
+        "max_rel_err": 0.0002731948043219745,
+        "effective_split_k": 1,
+        "programs": 192
+      },
+      "triton_int4": {
+        "us": 64.63242963116656,
+        "GBps": 111.78338863677959,
+        "config": {
+          "block_n": 32,
+          "block_k": 128,
+          "num_warps": 2,
+          "split_k": 8
+        },
+        "max_rel_err": 0.0002731948043219745,
+        "effective_split_k": 8,
+        "programs": 384
+      }
+    },
+    "7b/q_proj": {
+      "N": 3584,
+      "K": 3584,
+      "M": 1,
+      "fp16_cublas": {
+        "us": 150.98740537276214,
+        "GBps": 170.24233204445167
+      },
+      "torch_dequant_matmul": {
+        "us": 2397.2899256081414,
+        "GBps": 2.8106404352784873
+      },
+      "triton_int4_nosplit": {
+        "us": 96.5008721889361,
+        "GBps": 69.8223741108581,
+        "config": {
+          "block_n": 8,
+          "block_k": 128,
+          "num_warps": 2,
+          "split_k": 1
+        },
+        "max_rel_err": 0.00025230139726772904,
+        "effective_split_k": 1,
+        "programs": 448
+      },
+      "triton_int4": {
+        "us": 61.583483691817975,
+        "GBps": 109.41115370670732,
+        "config": {
+          "block_n": 32,
+          "block_k": 128,
+          "num_warps": 2,
+          "split_k": 4
+        },
+        "max_rel_err": 0.00025230139726772904,
+        "effective_split_k": 4,
+        "programs": 448
+      }
+    },
+    "7b/kv_proj": {
+      "N": 512,
+      "K": 3584,
+      "M": 1,
+      "fp16_cublas": {
+        "us": 28.553431853652,
+        "GBps": 128.81842080672888
+      },
+      "torch_dequant_matmul": {
+        "us": 155.47933964168323,
+        "GBps": 6.230435517879544
+      },
+      "triton_int4_nosplit": {
+        "us": 37.64800093275436,
+        "GBps": 25.730556098589883,
+        "config": {
+          "block_n": 8,
+          "block_k": 128,
+          "num_warps": 8,
+          "split_k": 1
+        },
+        "max_rel_err": 0.00028775379178114235,
+        "effective_split_k": 1,
+        "programs": 64
+      },
+      "triton_int4": {
+        "us": 19.66899949669217,
+        "GBps": 49.25029359845739,
+        "config": {
+          "block_n": 8,
+          "block_k": 128,
+          "num_warps": 2,
+          "split_k": 16
+        },
+        "max_rel_err": 0.00028775379178114235,
+        "effective_split_k": 14,
+        "programs": 896
+      }
+    },
+    "7b/o_proj": {
+      "N": 3584,
+      "K": 3584,
+      "M": 1,
+      "fp16_cublas": {
+        "us": 150.73949646675723,
+        "GBps": 170.52231566707292
+      },
+      "torch_dequant_matmul": {
+        "us": 2395.9128116739207,
+        "GBps": 2.812255924827459
+      },
+      "triton_int4_nosplit": {
+        "us": 96.50052427921605,
+        "GBps": 69.82262583884416,
+        "config": {
+          "block_n": 8,
+          "block_k": 128,
+          "num_warps": 2,
+          "split_k": 1
+        },
+        "max_rel_err": 0.00025230139726772904,
+        "effective_split_k": 1,
+        "programs": 448
+      },
+      "triton_int4": {
+        "us": 61.64954819025532,
+        "GBps": 109.29390721901565,
+        "config": {
+          "block_n": 32,
+          "block_k": 128,
+          "num_warps": 2,
+          "split_k": 4
+        },
+        "max_rel_err": 0.00025230139726772904,
+        "effective_split_k": 4,
+        "programs": 448
+      }
+    },
+    "7b/gate_up": {
+      "N": 18944,
+      "K": 3584,
+      "M": 1,
+      "fp16_cublas": {
+        "us": 581.4699804972089,
+        "GBps": 233.60732721549675
+      },
+      "torch_dequant_matmul": {
+        "us": 13405.01340230306,
+        "GBps": 2.654529237090241
+      },
+      "triton_int4_nosplit": {
+        "us": 278.46400141716003,
+        "GBps": 127.78671504720816,
+        "config": {
+          "block_n": 16,
+          "block_k": 128,
+          "num_warps": 2,
+          "split_k": 1
+        },
+        "max_rel_err": 0.0002726229722611606,
+        "effective_split_k": 1,
+        "programs": 1184
+      },
+      "triton_int4": {
+        "us": 268.51839758455753,
+        "GBps": 132.5197838214957,
+        "config": {
+          "block_n": 16,
+          "block_k": 128,
+          "num_warps": 2,
+          "split_k": 4
+        },
+        "max_rel_err": 0.0002726229722611606,
+        "effective_split_k": 4,
+        "programs": 4736
+      }
+    },
+    "7b/down": {
+      "N": 3584,
+      "K": 18944,
+      "M": 1,
+      "fp16_cublas": {
+        "us": 586.1180888281929,
+        "GBps": 231.75474463102117
+      },
+      "torch_dequant_matmul": {
+        "us": 13422.079881032309,
+        "GBps": 2.651153943010447
+      },
+      "triton_int4_nosplit": {
+        "us": 356.0277866689782,
+        "GBps": 99.94725505255217,
+        "config": {
+          "block_n": 16,
+          "block_k": 128,
+          "num_warps": 2,
+          "split_k": 1
+        },
+        "max_rel_err": 0.00025027894298546016,
+        "effective_split_k": 1,
+        "programs": 224
+      },
+      "triton_int4": {
+        "us": 279.82040494680405,
+        "GBps": 127.16728076626428,
+        "config": {
+          "block_n": 16,
+          "block_k": 128,
+          "num_warps": 2,
+          "split_k": 16
+        },
+        "max_rel_err": 0.00025027894298546016,
+        "effective_split_k": 15,
+        "programs": 3360
+      }
+    }
+  }
+}

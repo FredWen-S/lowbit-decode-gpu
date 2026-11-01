@@ -6,7 +6,12 @@ On a Cortex-A53 phone the answer was "not below 4 bits", because unpacking int4 
 
 **Status (work in progress):**
 
-1. **Triton int4 dequantize + GEMV kernel.** v1 on an L4 was 1.5–2.1× faster than fp16 on the large 7B layers, short of the predicted 2–3×; the limit was parallelism, not unpacking ([`results/L4_v1.md`](results/L4_v1.md)). v2 adds split-K; its predictions are written down and the L4 run is pending.
+1. **Triton int4 dequantize + GEMV kernel.** Batch-1 decode on an NVIDIA L4:
+   - **v1** was 1.5–2.1× faster than fp16 cuBLAS on the large 7B layers, short of the predicted 2–3×. On kv_proj it was slower than fp16. The limit was memory parallelism, not unpacking ([`results/L4_v1.md`](results/L4_v1.md)).
+   - **v2** adds split-K. It beats fp16 on every layer: **2.1–2.5× on the 7B layers**, and 1.2–1.5× on kv_proj ([`results/L4_v2.md`](results/L4_v2.md)).
+   - **What explains it:** bytes in flight. More programs and wider tiles both raise it.
+   - **Still open:** large layers stop at about 50–57% of copy bandwidth, against 3.8× ideal. Nsight Compute is next.
+   - Predictions were written before each run, and the results were scored against them.
 2. **vLLM vs SGLang serving benchmark.** Will measure TTFT, TPOT, throughput and memory, sweeping concurrency and prompt length, with prefix caching and chunked prefill on and off. Not started.
 3. **FP16 vs AWQ / GPTQ int4 (FP8 on L4).** Will cover speed and accuracy, reusing the A53 eval sets. Not started.
 

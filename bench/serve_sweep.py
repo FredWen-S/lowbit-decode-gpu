@@ -68,10 +68,20 @@ def server_cmd(engine, python, model):
             "--mem-fraction-static", str(MEM), "--context-length", str(MAX_LEN)]
 
 
+def venv_env(python):
+    """Environment as if the engine's virtualenv were activated. Engines JIT-compile kernels at
+    startup and call tools installed next to their Python (flashinfer runs `ninja`)."""
+    env = dict(os.environ)
+    bin_dir = os.path.dirname(os.path.abspath(python))
+    env["PATH"] = bin_dir + os.pathsep + env.get("PATH", "")
+    env["VIRTUAL_ENV"] = os.path.dirname(bin_dir)
+    return env
+
+
 def engine_version(engine, python):
     """The engine's version string, or None if it cannot be imported from that Python."""
     out = subprocess.run([python, "-c", f"import {engine}; print({engine}.__version__)"],
-                         capture_output=True, text=True)
+                         capture_output=True, text=True, env=venv_env(python))
     if out.returncode != 0:
         print(f"!! {engine} cannot be imported from {python}:\n{out.stderr.strip()[-1500:]}", flush=True)
         return None
@@ -176,7 +186,8 @@ def main():
             log_path = os.path.join(out_dir, "server.log")
             cmd = server_cmd(engine, python, a.model) + FLAGS[engine][config]
             with open(log_path, "w") as log:
-                proc = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                proc = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT, start_new_session=True,
+                                        env=venv_env(python))
             try:
                 startup = wait_ready(proc, log_path)
                 warm = [(x, 32) for x in P.make(4, 256)]

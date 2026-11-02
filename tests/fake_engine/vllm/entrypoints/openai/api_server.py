@@ -12,6 +12,11 @@ async def models(request):
 
 async def completions(request):
     body = await request.json()
+    if not body.get("stream"):  # accuracy requests: logprobs, no streaming
+        if body.get("echo"):
+            lps = [None] + [-2.0] * (len(body["prompt"]) - 1) + [-0.5]
+            return web.json_response({"choices": [{"logprobs": {"token_logprobs": lps}}]})
+        return web.json_response({"choices": [{"logprobs": {"top_logprobs": [{" A": -0.2, " B": -1.0}]}}]})
     resp = web.StreamResponse(headers={"Content-Type": "text/event-stream"})
     await resp.prepare(request)
     await asyncio.sleep(0.002 * len(body["prompt"].split()) / 100 + 0.01)

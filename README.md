@@ -27,7 +27,7 @@ On a Cortex-A53 phone the answer was "not below 4 bits", because unpacking int4 
    - **Predictions:** 3 of 7 held. The chunked-prefill test then took three runs: the first repeated one prompt (prefix-cache hits), and the second used p99, which cannot see rare stalls. The third run's predictions held for vLLM and failed for SGLang, for the reason above.
 
    ![Concurrency sweep](results/serving_L4/concurrency.png)
-3. **FP16 vs AWQ / GPTQ int4 (FP8 on L4).** Will cover speed and accuracy, reusing the A53 eval sets. Not started.
+3. **BF16 vs FP8 vs AWQ vs GPTQ int4 on Qwen2.5-7B (vLLM 0.32).** Speed at concurrency 1–64, WikiText-2 perplexity and MMLU (4,681 items), all paired against BF16. AWQ also runs on vLLM's non-Marlin kernel, so the kernel's share of the speedup is visible. The harness is dry-run against a fake server. Predictions, including the bytes-per-token arithmetic, are in [`predictions_quant_2026-11-02.md`](predictions_quant_2026-11-02.md). The GPU run is pending.
 
 ## Layout
 
@@ -43,6 +43,7 @@ On a Cortex-A53 phone the answer was "not below 4 bits", because unpacking int4 
 | [`tests/fake_engine/`](tests/fake_engine/) | A stand-in `vllm` server for dry-running the sweep without a GPU |
 | [`colab/serving_bench.ipynb`](colab/serving_bench.ipynb) | Installs both engines and runs the smoke test and the full sweep on Colab. [`serving_mixed_rerun.ipynb`](colab/serving_mixed_rerun.ipynb) reruns only the chunked-prefill configs |
 | [`bench/plot_serving.py`](bench/plot_serving.py) | Draws the concurrency figure from the result JSON |
+| [`bench/quant_sweep.py`](bench/quant_sweep.py), [`bench/accuracy_http.py`](bench/accuracy_http.py) | Quantization comparison: one vLLM server per format, speed through the load generator, MMLU and WikiText-2 through the same server. [`colab/quant_bench.ipynb`](colab/quant_bench.ipynb) runs it |
 | [`bench/plot_gaps.py`](bench/plot_gaps.py) | Draws every inter-token gap over time for the mixed workload |
 
 ## Running

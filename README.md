@@ -17,8 +17,14 @@ On a Cortex-A53 phone the answer was "not below 4 bits", because unpacking int4 
    - **Throughput is equal up to concurrency 32.** At 64, vLLM is 25% ahead.
    - **Default schedulers make opposite trade-offs.** vLLM keeps TTFT low (p50 ≤ 421 ms) but stalls running streams (inter-token p99 113–142 ms). SGLang keeps streams smooth (24–64 ms) and makes new prompts wait (TTFT p50 up to 1.2 s).
    - **Prefix caching** cuts TTFT 5.5–6× on both.
-   - **Chunked prefill:** small chunks cost long prompts 14–21% TTFT, with no visible decode benefit at p99. Stalls from one long prompt every 2 s touch under 1% of gaps, so p99 cannot see them. The client now records max gaps.
-   - **Predictions:** 3 of 7 held. The first chunked-prefill run was invalid (it repeated one prompt, which hit the prefix cache). It was found and rerun.
+   - **Chunked prefill protects running streams only when chunks share a step with decode.** A new 3.2k-token prompt every 2 s, with every gap recorded:
+     - vLLM with 512-token chunks: max gap 41 ms.
+     - 4096-token chunks: the stall is about 200 ms on both engines.
+     - SGLang with 512-token chunks (`enable_mixed_chunk` is off by default): 7 back-to-back prefill batches, so the max gap is 311 ms. That is worse than not chunking.
+     - p99 hid all of these stalls, because they touch under 1% of gaps.
+
+     ![Gaps](results/serving_L4_mixed3/gaps.png)
+   - **Predictions:** 3 of 7 held. The chunked-prefill test then took three runs: the first repeated one prompt (prefix-cache hits), and the second used p99, which cannot see rare stalls. The third run's predictions held for vLLM and failed for SGLang, for the reason above.
 
    ![Concurrency sweep](results/serving_L4/concurrency.png)
 3. **FP16 vs AWQ / GPTQ int4 (FP8 on L4).** Will cover speed and accuracy, reusing the A53 eval sets. Not started.
@@ -37,6 +43,7 @@ On a Cortex-A53 phone the answer was "not below 4 bits", because unpacking int4 
 | [`tests/fake_engine/`](tests/fake_engine/) | A stand-in `vllm` server for dry-running the sweep without a GPU |
 | [`colab/serving_bench.ipynb`](colab/serving_bench.ipynb) | Installs both engines and runs the smoke test and the full sweep on Colab. [`serving_mixed_rerun.ipynb`](colab/serving_mixed_rerun.ipynb) reruns only the chunked-prefill configs |
 | [`bench/plot_serving.py`](bench/plot_serving.py) | Draws the concurrency figure from the result JSON |
+| [`bench/plot_gaps.py`](bench/plot_gaps.py) | Draws every inter-token gap over time for the mixed workload |
 
 ## Running
 

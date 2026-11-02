@@ -1,0 +1,26 @@
+{
+  "engine": "sglang",
+  "version": "0.5.23",
+  "model": "/content/models/qwen2.5-1.5b-instruct",
+  "mem_fraction": 0.85,
+  "max_len": 4096,
+  "quick": false,
+  "configs": {
+    "chunk512": {
+      "flags": [
+        "--chunked-prefill-size",
+        "512"
+      ],
+      "startup_s": 42.00921678543091,
+      "gpu_mem_used_mib": 20323
+    },
+    "chunk4096": {
+      "flags": [
+        "--chunked-prefill-size",
+        "4096"
+      ],
+      "startup_s": 48.01065492630005,
+      "gpu_mem_used_mib": 20659
+    }
+  }
+}

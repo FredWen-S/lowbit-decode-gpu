@@ -129,3 +129,33 @@ Expected stall sizes:
 | T2 | With 4096-token chunks there are roughly 8 gaps over 100 ms per long arrival, about 50–150 in the run | outside 50–150 on either engine |
 | T3 | With 512-token chunks, the maximum gap is ≤ 70 ms and no gap exceeds 100 ms | either fails on either engine |
 | T4 | p99 stays below 50 ms in all four runs, as in the rerun. The stalls exist but stay invisible to p99 | any p99 ≥ 50 ms |
+
+### Third run: every gap recorded
+
+Raw data: [`serving_L4_mixed3/`](serving_L4_mixed3/). Same versions and workload, and the prefix-cache hit rate was 0% again.
+
+![Inter-token gaps over time](serving_L4_mixed3/gaps.png)
+
+| Engine, chunk | Gap p99 | Gap p99.9 | Max gap | Gaps > 100 ms (of ~12,200) | Long prompt TTFT p50 |
+|---|---|---|---|---|---|
+| vLLM, 512 | 39 ms | 40 ms | **41 ms** | **0** | 282 ms |
+| vLLM, 4096 | 21 ms | 216 ms | 219 ms | 96 | 249 ms |
+| SGLang, 512 | 30 ms | 269 ms | **311 ms** | **104** | 302 ms |
+| SGLang, 4096 | 28 ms | 211 ms | 253 ms | 96 | 245 ms |
+
+| # | Prediction | Result | Verdict |
+|---|---|---|---|
+| T1 | 4096-token chunks: max gap ≥ 150 ms on both | 219 / 253 ms | **Held** |
+| T2 | 4096-token chunks: 50–150 gaps over 100 ms | 96 / 96 (12 arrivals × 8 streams) | **Held** |
+| T3 | 512-token chunks: max gap ≤ 70 ms and no gap > 100 ms | vLLM 41 ms and 0; **SGLang 311 ms and 104** | **Held for vLLM, failed for SGLang** |
+| T4 | p99 < 50 ms in all four runs | 21–39 ms | **Held**: the stalls were there all along, below p99 |
+
+**Why chunking helps vLLM and hurts SGLang:**
+- **vLLM 0.32** schedules each step with a token budget. Running decodes come first, and one prefill chunk fills the rest. With 512-token chunks the 3.2k-token prompt is spread over about 7 steps, and each of those steps still advances every stream. That is the cluster of 35–40 ms gaps after each arrival in the figure, and no gap is longer.
+- **SGLang 0.5.23** has `enable_mixed_chunk = False` by default (see its server log). A prefill chunk runs as its own batch, and decoding waits until the whole prompt has been prefilled. With 512-token chunks, that means 7 back-to-back prefill batches: a single 265 ms pause per stream, longer than the one-step 4096 case (191 ms) because of the per-batch overhead. The long prompt also loses: TTFT goes from 245 to 302 ms.
+
+So **chunked prefill only protects running streams if chunks are co-scheduled with decode in the same step.** That is on by default in vLLM V1 and opt-in in SGLang (`--enable-mixed-chunk`, not tested here).
+
+This also qualifies point 3 above. SGLang's lower gap p99 in the concurrency sweep does not mean it never pauses decode. That sweep was run before gaps were recorded, so its maximum gaps are unknown.
+
+**Unexplained:** in the SGLang 512 run, from about 17 s on, some streams settle at about 28 ms per gap instead of about 14 ms (the second band in the figure). The log does not say why.

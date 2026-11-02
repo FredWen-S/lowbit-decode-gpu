@@ -31,7 +31,10 @@ On a Cortex-A53 phone the answer was "not below 4 bits", because unpacking int4 
    - **Batch 1 runs at the roofline in every format.** Marlin int4 reads weights at 237–239 GB/s, the same as BF16. That is 2.98–3.01× faster than BF16, against the ideal 3.15× from bytes (the bf16 LM head caps it). My Triton GEMV reached about half of that efficiency.
    - **The advantage fades with batching.** int4 is 1.8× faster than BF16 at concurrency 16 but only 1.2× at 64, where compute-bound prefill dominates. This is the A53 lesson on a GPU: fewer bits help only while decode is bound by weight reads.
    - **Accuracy:** GPTQ has the lower perplexity cost (+4.5% vs +6.3%), but AWQ the smaller MMLU loss (−0.7 vs −1.2 ± 0.4 pp, paired over 4,681 items).
-   - **FP8:** 1.65× at batch 1. Its accuracy is pending a rerun.
+   - **FP8 costs nothing in accuracy** (MMLU +0.19 ± 0.24 pp, perplexity +0.8%). It is 1.65× faster at batch 1, and **it overtakes int4 at concurrency 64** (1.46× vs 1.2×): W8A8 runs matmuls on FP8 tensor cores and cuts compute, while weight-only int4 cuts only bytes. The fastest format depends on load.
+   - **Predictions:** 5 of 8 held. Two failed on the fast side: the copy-bandwidth floor was conservative. One was not testable: vLLM 0.32 runs AWQ on Marlin even when asked not to.
+
+   ![Quantization summary](results/quant_L4/summary.png)
 
 ## Layout
 
@@ -48,6 +51,7 @@ On a Cortex-A53 phone the answer was "not below 4 bits", because unpacking int4 
 | [`colab/serving_bench.ipynb`](colab/serving_bench.ipynb) | Installs both engines and runs the smoke test and the full sweep on Colab. [`serving_mixed_rerun.ipynb`](colab/serving_mixed_rerun.ipynb) reruns only the chunked-prefill configs |
 | [`bench/plot_serving.py`](bench/plot_serving.py) | Draws the concurrency figure from the result JSON |
 | [`bench/quant_sweep.py`](bench/quant_sweep.py), [`bench/accuracy_http.py`](bench/accuracy_http.py) | Quantization comparison: one vLLM server per format, speed through the load generator, MMLU and WikiText-2 through the same server. [`colab/quant_bench.ipynb`](colab/quant_bench.ipynb) runs it |
+| [`bench/plot_quant.py`](bench/plot_quant.py) | Draws the quantization summary (throughput vs BF16 and accuracy cost) |
 | [`bench/plot_gaps.py`](bench/plot_gaps.py) | Draws every inter-token gap over time for the mixed workload |
 
 ## Running

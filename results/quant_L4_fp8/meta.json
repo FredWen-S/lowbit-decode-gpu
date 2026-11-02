@@ -1,0 +1,33 @@
+{
+  "engine": "vllm",
+  "version": "0.32.0",
+  "mem_fraction": 0.9,
+  "max_len": 4096,
+  "quick": false,
+  "mmlu_items": 4681,
+  "wikitext_chunks": 100,
+  "configs": {
+    "fp8": {
+      "model": "Qwen2.5-7B-Instruct",
+      "flags": [
+        "--quantization",
+        "fp8"
+      ],
+      "startup_s": 63.04367113113403,
+      "gpu_mem_used_mib": 20420,
+      "kernel_log": [
+        "(APIServer pid=3531) INFO 11-02 18:29:29 [api_utils.py:286] non-default args: {'port': 8100, 'model': '/content/models/Qwen2.5-7B-Instruct', 'max_model_len': 4096, 'quantization': 'fp8', 'served_model_name': ['model'], 'gpu_memory_utilization': 0.9}",
+        "(APIServer pid=3531) WARNING 11-02 18:29:31 [weight_utils.py:352] --quantization fp8 is deprecated for online quantization; use --quantization fp8_per_tensor instead.",
+        "(APIServer pid=3531) INFO 11-02 18:29:31 [kernel.py:467] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'], gelu_and_mul_sparse=['triton', 'native'])",
+        "(EngineCore pid=3671) INFO 11-02 18:29:46 [core.py:133] Initializing a V1 LLM engine (v0.32.0) with config: model='/content/models/Qwen2.5-7B-Instruct', speculative_config=None, tokenizer='/content/models/Qwen2.5-7B-Instruct', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_",
+        "(EngineCore pid=3671) INFO 11-02 18:29:48 [__init__.py:797] Selected CutlassFP8ScaledMMLinearKernel for Fp8PerTensorOnlineLinearMethod",
+        "(EngineCore pid=3671) INFO 11-02 18:29:56 [base_loader.py:164] Online quantization as part of model loading took 0.17 seconds",
+        "(EngineCore pid=3671) INFO 11-02 18:30:08 [kernel_warmup.py:176] JIT kernel warmup starting.",
+        "(EngineCore pid=3671) INFO 11-02 18:30:08 [kernel_warmup.py:189] JIT kernel warmup finished in 0.00s.",
+        "(EngineCore pid=3671) INFO 11-02 18:30:18 [jit_monitor.py:84] Kernel JIT monitor activated; monitored JIT compilations during inference will use mode=warn.",
+        "(EngineCore pid=3671) INFO 11-02 18:30:19 [kernel.py:467] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'], gelu_and_mul_sparse=['triton', 'native'])",
+        "(EngineCore pid=3671) WARNING 11-02 18:30:22 [jit_monitor.py:140] Triton kernel JIT compilation during inference: _gumbel_sample_kernel. This causes a latency spike; consider extending warmup to cover this shape/config."
+      ]
+    }
+  }
+}

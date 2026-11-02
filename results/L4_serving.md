@@ -114,3 +114,18 @@ Cells give vLLM first, SGLang second.
 The client did not save individual gaps then, so the maximum gap cannot be recovered from these files.
 
 **Fix for next time:** the client now keeps every gap and reports p99.9, the maximum and the count of gaps over 100 ms. A third run, about 25 minutes and under 1 compute unit, would settle whether a 4096-token chunk stalls decode for about 200 ms, as a single-step prefill should.
+
+### Predictions for the third run, written before it (2026-11-02)
+
+The workload is the same as the rerun: 8 short streams, plus a fresh 3.2k-token prompt every 2 s, with prefill chunks of 512 and 4096 tokens. The client now keeps every gap.
+
+Expected stall sizes:
+- **4096-token chunk:** a 3.2k-token prompt is prefilled in one step. The long prompt's TTFT was 238–246 ms, so the decode streams sharing that step should wait about 200 ms.
+- **512-token chunk:** each step carries one ~512-token chunk, about 1.6 TFLOP or 25–35 ms on the L4, plus the usual ~15 ms decode work. That makes gaps of about 40–50 ms.
+
+| # | Prediction | Would be wrong if |
+|---|---|---|
+| T1 | With 4096-token chunks, the maximum gap is ≥ 150 ms on both engines | < 150 ms on either |
+| T2 | With 4096-token chunks there are roughly 8 gaps over 100 ms per long arrival, about 50–150 in the run | outside 50–150 on either engine |
+| T3 | With 512-token chunks, the maximum gap is ≤ 70 ms and no gap exceeds 100 ms | either fails on either engine |
+| T4 | p99 stays below 50 ms in all four runs, as in the rerun. The stalls exist but stay invisible to p99 | any p99 ≥ 50 ms |

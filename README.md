@@ -27,7 +27,11 @@ On a Cortex-A53 phone the answer was "not below 4 bits", because unpacking int4 
    - **Predictions:** 3 of 7 held. The chunked-prefill test then took three runs: the first repeated one prompt (prefix-cache hits), and the second used p99, which cannot see rare stalls. The third run's predictions held for vLLM and failed for SGLang, for the reason above.
 
    ![Concurrency sweep](results/serving_L4/concurrency.png)
-3. **BF16 vs FP8 vs AWQ vs GPTQ int4 on Qwen2.5-7B (vLLM 0.32).** Speed at concurrency 1–64, WikiText-2 perplexity and MMLU (4,681 items), all paired against BF16. AWQ also runs on vLLM's non-Marlin kernel, so the kernel's share of the speedup is visible. The harness is dry-run against a fake server. Predictions, including the bytes-per-token arithmetic, are in [`predictions_quant_2026-11-02.md`](predictions_quant_2026-11-02.md). The GPU run is pending.
+3. **BF16 vs FP8 vs AWQ vs GPTQ int4 on Qwen2.5-7B (vLLM 0.32)** ([`results/L4_quant.md`](results/L4_quant.md)):
+   - **Batch 1 runs at the roofline in every format.** Marlin int4 reads weights at 237–239 GB/s, the same as BF16. That is 2.98–3.01× faster than BF16, against the ideal 3.15× from bytes (the bf16 LM head caps it). My Triton GEMV reached about half of that efficiency.
+   - **The advantage fades with batching.** int4 is 1.8× faster than BF16 at concurrency 16 but only 1.2× at 64, where compute-bound prefill dominates. This is the A53 lesson on a GPU: fewer bits help only while decode is bound by weight reads.
+   - **Accuracy:** GPTQ has the lower perplexity cost (+4.5% vs +6.3%), but AWQ the smaller MMLU loss (−0.7 vs −1.2 ± 0.4 pp, paired over 4,681 items).
+   - **FP8:** 1.65× at batch 1. Its accuracy is pending a rerun.
 
 ## Layout
 

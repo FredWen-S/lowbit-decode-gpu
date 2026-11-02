@@ -1,0 +1,108 @@
+{
+  "engine": "vllm",
+  "version": "0.32.0",
+  "mem_fraction": 0.9,
+  "max_len": 4096,
+  "quick": false,
+  "mmlu_items": 4681,
+  "wikitext_chunks": 100,
+  "configs": {
+    "bf16": {
+      "model": "Qwen2.5-7B-Instruct",
+      "flags": [
+        "--dtype",
+        "bfloat16"
+      ],
+      "startup_s": 78.0460696220398,
+      "gpu_mem_used_mib": 20414,
+      "kernel_log": [
+        "(APIServer pid=5355) INFO 11-02 17:01:06 [kernel.py:467] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'], gelu_and_mul_sparse=['triton', 'native'])",
+        "(EngineCore pid=5459) INFO 11-02 17:01:20 [core.py:133] Initializing a V1 LLM engine (v0.32.0) with config: model='/content/models/Qwen2.5-7B-Instruct', speculative_config=None, tokenizer='/content/models/Qwen2.5-7B-Instruct', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_",
+        "(EngineCore pid=5459) INFO 11-02 17:01:57 [kernel_warmup.py:176] JIT kernel warmup starting.",
+        "(EngineCore pid=5459) INFO 11-02 17:01:57 [kernel_warmup.py:189] JIT kernel warmup finished in 0.00s.",
+        "(EngineCore pid=5459) INFO 11-02 17:02:09 [jit_monitor.py:84] Kernel JIT monitor activated; monitored JIT compilations during inference will use mode=warn.",
+        "(EngineCore pid=5459) INFO 11-02 17:02:10 [kernel.py:467] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'], gelu_and_mul_sparse=['triton', 'native'])",
+        "(EngineCore pid=5459) WARNING 11-02 17:02:14 [jit_monitor.py:140] Triton kernel JIT compilation during inference: _gumbel_sample_kernel. This causes a latency spike; consider extending warmup to cover this shape/config."
+      ]
+    },
+    "fp8": {
+      "model": "Qwen2.5-7B-Instruct",
+      "flags": [
+        "--quantization",
+        "fp8"
+      ],
+      "startup_s": 102.01998925209045,
+      "gpu_mem_used_mib": 19634,
+      "kernel_log": [
+        "(APIServer pid=7685) INFO 11-02 17:09:53 [api_utils.py:286] non-default args: {'port': 8100, 'model': '/content/models/Qwen2.5-7B-Instruct', 'max_model_len': 4096, 'quantization': 'fp8', 'served_model_name': ['model'], 'gpu_memory_utilization': 0.9}",
+        "(APIServer pid=7685) WARNING 11-02 17:09:54 [weight_utils.py:352] --quantization fp8 is deprecated for online quantization; use --quantization fp8_per_tensor instead.",
+        "(APIServer pid=7685) INFO 11-02 17:09:54 [kernel.py:467] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'], gelu_and_mul_sparse=['triton', 'native'])",
+        "(EngineCore pid=7824) INFO 11-02 17:10:09 [core.py:133] Initializing a V1 LLM engine (v0.32.0) with config: model='/content/models/Qwen2.5-7B-Instruct', speculative_config=None, tokenizer='/content/models/Qwen2.5-7B-Instruct', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_",
+        "(EngineCore pid=7824) INFO 11-02 17:10:11 [__init__.py:797] Selected CutlassFP8ScaledMMLinearKernel for Fp8PerTensorOnlineLinearMethod",
+        "(EngineCore pid=7824) INFO 11-02 17:10:18 [base_loader.py:164] Online quantization as part of model loading took 0.18 seconds",
+        "(EngineCore pid=7824) INFO 11-02 17:11:09 [kernel_warmup.py:176] JIT kernel warmup starting.",
+        "(EngineCore pid=7824) INFO 11-02 17:11:09 [kernel_warmup.py:189] JIT kernel warmup finished in 0.00s.",
+        "(EngineCore pid=7824) INFO 11-02 17:11:22 [jit_monitor.py:84] Kernel JIT monitor activated; monitored JIT compilations during inference will use mode=warn.",
+        "(EngineCore pid=7824) INFO 11-02 17:11:23 [kernel.py:467] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'], gelu_and_mul_sparse=['triton', 'native'])",
+        "(EngineCore pid=7824) WARNING 11-02 17:11:26 [jit_monitor.py:140] Triton kernel JIT compilation during inference: _gumbel_sample_kernel. This causes a latency spike; consider extending warmup to cover this shape/config."
+      ],
+      "error": "fp8: RuntimeError: no tokens streamed"
+    },
+    "awq": {
+      "model": "Qwen2.5-7B-Instruct-AWQ",
+      "flags": [],
+      "startup_s": 75.01624131202698,
+      "gpu_mem_used_mib": 20448,
+      "kernel_log": [
+        "(APIServer pid=8995) INFO 11-02 17:14:15 [kernel.py:467] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'], gelu_and_mul_sparse=['triton', 'native'])",
+        "(EngineCore pid=9134) INFO 11-02 17:14:30 [core.py:133] Initializing a V1 LLM engine (v0.32.0) with config: model='/content/models/Qwen2.5-7B-Instruct-AWQ', speculative_config=None, tokenizer='/content/models/Qwen2.5-7B-Instruct-AWQ', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, to",
+        "(EngineCore pid=9134) INFO 11-02 17:14:32 [__init__.py:923] Using MarlinLinearKernel for mixed-precision linear",
+        "(EngineCore pid=9134) INFO 11-02 17:14:32 [auto_awq.py:451] Using MarlinLinearKernel for AutoAWQMarlinLinearMethod",
+        "(EngineCore pid=9134) INFO 11-02 17:15:02 [kernel_warmup.py:176] JIT kernel warmup starting.",
+        "(EngineCore pid=9134) INFO 11-02 17:15:02 [kernel_warmup.py:189] JIT kernel warmup finished in 0.00s.",
+        "(EngineCore pid=9134) INFO 11-02 17:15:15 [jit_monitor.py:84] Kernel JIT monitor activated; monitored JIT compilations during inference will use mode=warn.",
+        "(EngineCore pid=9134) INFO 11-02 17:15:16 [kernel.py:467] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'], gelu_and_mul_sparse=['triton', 'native'])",
+        "(EngineCore pid=9134) WARNING 11-02 17:15:19 [jit_monitor.py:140] Triton kernel JIT compilation during inference: _gumbel_sample_kernel. This causes a latency spike; consider extending warmup to cover this shape/config."
+      ],
+      "error": "awq: RuntimeError: no tokens streamed"
+    },
+    "awq_nomarlin": {
+      "model": "Qwen2.5-7B-Instruct-AWQ",
+      "flags": [
+        "--quantization",
+        "awq"
+      ],
+      "startup_s": 60.01318120956421,
+      "gpu_mem_used_mib": 20448,
+      "kernel_log": [
+        "(APIServer pid=10012) INFO 11-02 17:17:27 [api_utils.py:286] non-default args: {'port': 8100, 'model': '/content/models/Qwen2.5-7B-Instruct-AWQ', 'max_model_len': 4096, 'quantization': 'awq', 'served_model_name': ['model'], 'gpu_memory_utilization': 0.9}",
+        "(APIServer pid=10012) INFO 11-02 17:17:28 [kernel.py:467] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'], gelu_and_mul_sparse=['triton', 'native'])",
+        "(EngineCore pid=10147) INFO 11-02 17:17:43 [core.py:133] Initializing a V1 LLM engine (v0.32.0) with config: model='/content/models/Qwen2.5-7B-Instruct-AWQ', speculative_config=None, tokenizer='/content/models/Qwen2.5-7B-Instruct-AWQ', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, t",
+        "(EngineCore pid=10147) INFO 11-02 17:17:45 [__init__.py:923] Using MarlinLinearKernel for mixed-precision linear",
+        "(EngineCore pid=10147) INFO 11-02 17:17:45 [auto_awq.py:451] Using MarlinLinearKernel for AutoAWQMarlinLinearMethod",
+        "(EngineCore pid=10147) INFO 11-02 17:18:03 [kernel_warmup.py:176] JIT kernel warmup starting.",
+        "(EngineCore pid=10147) INFO 11-02 17:18:03 [kernel_warmup.py:189] JIT kernel warmup finished in 0.00s.",
+        "(EngineCore pid=10147) INFO 11-02 17:18:13 [jit_monitor.py:84] Kernel JIT monitor activated; monitored JIT compilations during inference will use mode=warn.",
+        "(EngineCore pid=10147) INFO 11-02 17:18:14 [kernel.py:467] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'], gelu_and_mul_sparse=['triton', 'native'])",
+        "(EngineCore pid=10147) WARNING 11-02 17:18:17 [jit_monitor.py:140] Triton kernel JIT compilation during inference: _gumbel_sample_kernel. This causes a latency spike; consider extending warmup to cover this shape/config."
+      ]
+    },
+    "gptq": {
+      "model": "Qwen2.5-7B-Instruct-GPTQ-Int4",
+      "flags": [],
+      "startup_s": 102.02049803733826,
+      "gpu_mem_used_mib": 19646,
+      "kernel_log": [
+        "(APIServer pid=11877) INFO 11-02 17:24:14 [kernel.py:467] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'], gelu_and_mul_sparse=['triton', 'native'])",
+        "(EngineCore pid=12013) INFO 11-02 17:24:29 [core.py:133] Initializing a V1 LLM engine (v0.32.0) with config: model='/content/models/Qwen2.5-7B-Instruct-GPTQ-Int4', speculative_config=None, tokenizer='/content/models/Qwen2.5-7B-Instruct-GPTQ-Int4', skip_tokenizer_init=False, tokenizer_mode=auto, revi",
+        "(EngineCore pid=12013) INFO 11-02 17:24:30 [__init__.py:923] Using MarlinLinearKernel for mixed-precision linear",
+        "(EngineCore pid=12013) INFO 11-02 17:24:30 [auto_gptq.py:352] Using MarlinLinearKernel for AutoGPTQLinearMethod",
+        "(EngineCore pid=12013) INFO 11-02 17:25:28 [kernel_warmup.py:176] JIT kernel warmup starting.",
+        "(EngineCore pid=12013) INFO 11-02 17:25:28 [kernel_warmup.py:189] JIT kernel warmup finished in 0.00s.",
+        "(EngineCore pid=12013) INFO 11-02 17:25:41 [jit_monitor.py:84] Kernel JIT monitor activated; monitored JIT compilations during inference will use mode=warn.",
+        "(EngineCore pid=12013) INFO 11-02 17:25:42 [kernel.py:467] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'], gelu_and_mul_sparse=['triton', 'native'])",
+        "(EngineCore pid=12013) WARNING 11-02 17:25:45 [jit_monitor.py:140] Triton kernel JIT compilation during inference: _gumbel_sample_kernel. This causes a latency spike; consider extending warmup to cover this shape/config."
+      ]
+    }
+  }
+}

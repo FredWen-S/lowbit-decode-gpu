@@ -5,8 +5,6 @@ One vLLM server per config, all measured by the same client:
   speed     in 512 / out 128, closed loop at C = 1, 4, 16, 64 (serve_client)
   wikitext  WikiText-2 test, 100 chunks of 1024 tokens -> perplexity (accuracy_http)
   mmlu      MMLU test, every 3rd question (4,681), zero-shot letter choice (accuracy_http)
-The two AWQ configs load the same weights; `awq_nomarlin` forces vLLM's older AWQ kernel
-instead of Marlin, so the difference between them is the kernel alone.
 
 usage:
   python bench/quant_sweep.py --models-dir /content/models --python /content/venv-vllm/bin/python
@@ -32,9 +30,11 @@ CONFIGS = {  # name -> (model directory under --models-dir, extra vLLM flags)
     "bf16": (BF16, ["--dtype", "bfloat16"]),
     "fp8": (BF16, ["--quantization", "fp8"]),
     "awq": ("Qwen2.5-7B-Instruct-AWQ", []),
-    "awq_nomarlin": ("Qwen2.5-7B-Instruct-AWQ", ["--quantization", "awq"]),
     "gptq": ("Qwen2.5-7B-Instruct-GPTQ-Int4", []),
 }
+# vLLM 0.32 maps `--quantization awq` to the Marlin kernel as well (its log says
+# "Using MarlinLinearKernel for AutoAWQMarlinLinearMethod"), so a non-Marlin AWQ config
+# measures nothing new. The first run's `awq_nomarlin` results are a second Marlin run.
 KERNEL_LOG = re.compile(r"marlin|quantization|kernel", re.I)
 
 

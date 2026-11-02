@@ -77,3 +77,34 @@ def test_periodic_stops_when_requests_run_out(server_url):
     records, _ = loop.run_until_complete(
         serve_client.run(url, [("x", 60)] * 2, concurrency=2, background=[("a", 2), ("b", 2)], interval=0.05))
     assert [r["kind"] for r in records].count("periodic") == 2
+
+
+async def silent_completions(request):
+    """Streams only special tokens (empty text) and the usage chunk, like EOS-first generations."""
+    body = await request.json()
+    resp = web.StreamResponse(headers={"Content-Type": "text/event-stream"})
+    await resp.prepare(request)
+    await resp.write(f"data: {json.dumps({'choices': [{'text': ''}]})}\n\n".encode())
+    usage = {"prompt_tokens": 1, "completion_tokens": body["max_tokens"]}
+    await resp.write(f"data: {json.dumps({'choices': [], 'usage': usage})}\n\n".encode())
+    await resp.write(b"data: [DONE]\n\n")
+    return resp
+
+
+def test_request_with_no_visible_text_is_kept():
+    loop = asyncio.new_event_loop()
+    app = web.Application()
+    app.router.add_post("/v1/completions", silent_completions)
+    runner = web.AppRunner(app)
+    loop.run_until_complete(runner.setup())
+    site = web.TCPSite(runner, "127.0.0.1", 0)
+    loop.run_until_complete(site.start())
+    url = f"http://127.0.0.1:{site._server.sockets[0].getsockname()[1]}/v1/completions"
+    try:
+        records, wall = loop.run_until_complete(serve_client.run(url, [("p", 16)] * 2, concurrency=2))
+        assert [r["ttft"] for r in records] == [None, None] and records[0]["output_tokens"] == 16
+        s = serve_client.summarize(records, wall)
+        assert s["requests"] == 2 and s["ttft_p50_ms"] is None
+    finally:
+        loop.run_until_complete(runner.cleanup())
+        loop.close()

@@ -14,9 +14,13 @@ import aiohttp
 
 
 async def stream_request(session, url, prompt, max_tokens, model="model"):
+    # With ignore_eos the model can keep emitting special tokens after EOS. Those are dropped
+    # from the streamed text by default, so a request could stream no text at all; keeping
+    # them gives one streamed chunk per generated token.
     payload = {
         "model": model, "prompt": prompt, "max_tokens": max_tokens, "temperature": 0.0,
         "stream": True, "stream_options": {"include_usage": True}, "ignore_eos": True,
+        "skip_special_tokens": False,
     }
     t0 = time.perf_counter()
     times, usage = [], None
@@ -37,13 +41,13 @@ async def stream_request(session, url, prompt, max_tokens, model="model"):
             if choices and choices[0].get("text"):
                 times.append(time.perf_counter())
     t1 = time.perf_counter()
-    if not times:
-        raise RuntimeError("no tokens streamed")
+    if not times and not usage:
+        raise RuntimeError("no tokens streamed and no usage reported")
     out_tokens = usage["completion_tokens"] if usage else len(times)
-    ttft = times[0] - t0
+    ttft = times[0] - t0 if times else None  # no visible text: keep the request, without TTFT
     return {
         "start": t0, "end": t1, "ttft": ttft, "e2e": t1 - t0,
-        "tpot": (t1 - t0 - ttft) / (out_tokens - 1) if out_tokens > 1 else None,
+        "tpot": (t1 - t0 - ttft) / (out_tokens - 1) if ttft is not None and out_tokens > 1 else None,
         "itl": [b - a for a, b in zip(times, times[1:])],
         "prompt_tokens": usage["prompt_tokens"] if usage else None,
         "output_tokens": out_tokens,
@@ -127,11 +131,12 @@ def summarize(records, wall, kind="main"):
            "mean_prompt_tokens": sum(r["prompt_tokens"] or 0 for r in rs) / max(1, len(rs))}
     for name in ("ttft", "tpot", "e2e"):
         for q in (50, 90, 99):
-            out[f"{name}_p{q}_ms"] = 1e3 * pct([r[name] for r in rs], q)
+            v = pct([r[name] for r in rs], q)
+            out[f"{name}_p{q}_ms"] = None if v is None else 1e3 * v
     # rare stalls (one long prefill every few seconds) can touch < 1% of gaps, below p99
     gaps = [g for r in rs for g in r["itl"]]
-    out["itl_p99_ms"] = 1e3 * pct(gaps, 99)
-    out["itl_p999_ms"] = 1e3 * pct(gaps, 99.9)
+    out["itl_p99_ms"] = 1e3 * pct(gaps, 99) if gaps else None
+    out["itl_p999_ms"] = 1e3 * pct(gaps, 99.9) if gaps else None
     out["itl_max_ms"] = 1e3 * max(gaps) if gaps else None
     out["gaps_over_100ms"] = sum(g > 0.1 for g in gaps)
     out["gaps"] = len(gaps)

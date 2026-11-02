@@ -17,7 +17,8 @@ On a Cortex-A53 phone the answer was "not below 4 bits", because unpacking int4 
    - **Throughput is equal up to concurrency 32.** At 64, vLLM is 25% ahead.
    - **Default schedulers make opposite trade-offs.** vLLM keeps TTFT low (p50 ≤ 421 ms) but stalls running streams (inter-token p99 113–142 ms). SGLang keeps streams smooth (24–64 ms) and makes new prompts wait (TTFT p50 up to 1.2 s).
    - **Prefix caching** cuts TTFT 5.5–6× on both.
-   - **Predictions:** 3 of 7 held. The chunked-prefill experiment was flawed (it repeated one prompt, so it hit the prefix cache) and is being rerun.
+   - **Chunked prefill:** small chunks cost long prompts 14–21% TTFT, with no visible decode benefit at p99. Stalls from one long prompt every 2 s touch under 1% of gaps, so p99 cannot see them. The client now records max gaps.
+   - **Predictions:** 3 of 7 held. The first chunked-prefill run was invalid (it repeated one prompt, which hit the prefix cache). It was found and rerun.
 
    ![Concurrency sweep](results/serving_L4/concurrency.png)
 3. **FP16 vs AWQ / GPTQ int4 (FP8 on L4).** Will cover speed and accuracy, reusing the A53 eval sets. Not started.

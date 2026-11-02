@@ -202,15 +202,15 @@ def main():
                                "concurrency": c, "summary": serve_client.summarize(records, wall)}
                         if bg is not None:
                             res["background_summary"] = serve_client.summarize(records, wall, kind="periodic")
-                        for r in records:
-                            r.pop("itl")  # summarized as itl_p99; keeps the files small
+                        for r in records:  # keep every gap so tails can be re-read later
+                            r["itl"] = [round(g, 5) for g in r["itl"]]
                         res["records"] = records
                         with open(os.path.join(out_dir, f"{exp}_{point}.json"), "w") as f:
                             json.dump(res, f, indent=1)
                         s = res["summary"]
                         print(f"   {exp:<12}{point:<11} {s['output_tok_per_s']:8.0f} tok/s  "
                               f"TTFT p50 {s['ttft_p50_ms']:7.0f} ms  TPOT p50 {s['tpot_p50_ms']:6.1f} ms  "
-                              f"ITL p99 {s['itl_p99_ms']:6.1f} ms", flush=True)
+                              f"ITL p99 {s['itl_p99_ms']:6.1f} max {s['itl_max_ms']:6.1f} ms", flush=True)
             except Exception as e:  # one bad config should not cost the rest of the run
                 msg = f"{engine}/{config}: {type(e).__name__}: {e}"
                 print(f"!! {msg}\n   last lines of {log_path}:", flush=True)

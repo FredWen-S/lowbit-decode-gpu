@@ -55,6 +55,8 @@ def test_closed_loop_metrics(server_url):
     assert s["requests"] == 8 and all(r["output_tokens"] == 20 and r["prompt_tokens"] == 4 for r in records)
     assert FIRST * 1e3 <= s["ttft_p50_ms"] < FIRST * 1e3 + 40
     assert STEP * 1e3 <= s["tpot_p50_ms"] < STEP * 1e3 + 6
+    assert s["gaps"] == 8 * 19 and s["itl_p99_ms"] <= s["itl_p999_ms"] <= s["itl_max_ms"]
+    assert s["gaps_over_100ms"] == 0
     # 4 workers x 2 rounds of ~0.24 s each
     assert 0.4 < wall < 1.0
 

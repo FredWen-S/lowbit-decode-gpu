@@ -128,5 +128,11 @@ def summarize(records, wall, kind="main"):
     for name in ("ttft", "tpot", "e2e"):
         for q in (50, 90, 99):
             out[f"{name}_p{q}_ms"] = 1e3 * pct([r[name] for r in rs], q)
-    out["itl_p99_ms"] = 1e3 * pct([g for r in rs for g in r["itl"]], 99)
+    # rare stalls (one long prefill every few seconds) can touch < 1% of gaps, below p99
+    gaps = [g for r in rs for g in r["itl"]]
+    out["itl_p99_ms"] = 1e3 * pct(gaps, 99)
+    out["itl_p999_ms"] = 1e3 * pct(gaps, 99.9)
+    out["itl_max_ms"] = 1e3 * max(gaps) if gaps else None
+    out["gaps_over_100ms"] = sum(g > 0.1 for g in gaps)
+    out["gaps"] = len(gaps)
     return out

@@ -42,7 +42,7 @@ Prompts are about 532 tokens, outputs 128 tokens, closed loop. In each cell, vLL
 | S3 | At C = 64, TPOT is 1.3–2.0 × TPOT(1), and throughput is 2,000–3,500 tok/s | 2.5× and 1,717 (vLLM); 2.9× and 1,378 (SGLang) | **Failed.** The estimate left out the prefill load, see below |
 | S4 | The engines' throughput is within ±15% at every point | within 3% everywhere except C = 64, where vLLM is 25% ahead | **Failed at one point** |
 | S5 | Prefix caching cuts TTFT p50 ≥ 3× | 5.5× (vLLM), 6.0× (SGLang) | **Held** |
-| S6 | Small prefill chunks keep decode-gap p99 ≤ 50 ms; 4096-token chunks let it reach ≥ 100 ms | (see below) | **Not tested: experiment flaw. Rerun pending** |
+| S6 | Small prefill chunks keep decode-gap p99 ≤ 50 ms; 4096-token chunks let it reach ≥ 100 ms | rerun: 512 → 38 / 29 ms, 4096 → 22 / 26 ms | **Failed as stated.** p99 was the wrong metric for rare stalls, see below |
 | S7 | At C = 16, TTFT for 2048-token prompts is ≥ 5× that for 128-token prompts | 3.5× (vLLM), 8.2× (SGLang) | **Held for SGLang, failed for vLLM** |
 
 ## What the numbers say
@@ -85,4 +85,32 @@ It repeated **one** 3k-token prompt every 2 s. Prefix caching was on, so only th
 
 So the 512 vs 4096 comparison (gap p99 of 16–28 ms in all four runs) says nothing about chunking.
 
-**Fix:** a fresh random long prompt per arrival (`serve_client.periodic` now takes a list and stops when it runs out). The rerun covers only the two chunk configs, using [`../colab/serving_mixed_rerun.ipynb`](../colab/serving_mixed_rerun.ipynb). The original files are kept in `serving_L4/*/chunk*/` for the record.
+**Fix:** a fresh random long prompt per arrival (`serve_client.periodic` now takes a list and stops when it runs out). The rerun covered only the two chunk configs, using [`../colab/serving_mixed_rerun.ipynb`](../colab/serving_mixed_rerun.ipynb). The original files are kept in `serving_L4/*/chunk*/` for the record.
+
+### Rerun with a fresh prompt per arrival
+
+Same engine versions (vLLM 0.32.0, SGLang 0.5.23). Raw data: [`serving_L4_mixed2/`](serving_L4_mixed2/).
+
+The rerun is valid:
+- every 3.2k-token prompt took 231–335 ms to its first token, so each one was really prefilled;
+- vLLM reports a prefix-cache hit rate of 0%.
+
+Cells give vLLM first, SGLang second.
+
+| Prefill chunk | Short streams: TPOT p50 (ms) | Short streams: gap p99 (ms) | Long prompt: TTFT p50 (ms) |
+|---|---|---|---|
+| 512 tokens | 15.0 / 15.9 | 38 / 29 | 281 / 288 |
+| 4096 tokens | 15.4 / 15.4 | 22 / 26 | 246 / 238 |
+
+**What it shows:**
+- Small chunks cost the long prompt 14–21% more time to first token. Its prefill is split into 7 steps, each sharing the GPU with decode.
+- The decode side shows no benefit at the p99 level. The 4096-token runs even have a slightly *lower* gap p99.
+
+**Why S6 failed: the metric, not the GPU.**
+- A long prompt arrives every 2 s and stalls each of the 8 streams for one gap. That is about 100 stalled gaps out of about 12,000, under 1%.
+- A p99 over all gaps cannot see an event that touches less than 1% of them.
+- The concurrency sweep is different: there, every round brings 16–64 prefills, so stalls are common enough to reach p99 (113–142 ms on vLLM).
+
+The client did not save individual gaps then, so the maximum gap cannot be recovered from these files.
+
+**Fix for next time:** the client now keeps every gap and reports p99.9, the maximum and the count of gaps over 100 ms. A third run, about 25 minutes and under 1 compute unit, would settle whether a 4096-token chunk stalls decode for about 200 ms, as a single-step prefill should.

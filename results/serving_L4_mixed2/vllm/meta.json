@@ -1,0 +1,26 @@
+{
+  "engine": "vllm",
+  "version": "0.32.0",
+  "model": "/content/models/qwen2.5-1.5b-instruct",
+  "mem_fraction": 0.85,
+  "max_len": 4096,
+  "quick": false,
+  "configs": {
+    "chunk512": {
+      "flags": [
+        "--max-num-batched-tokens",
+        "512"
+      ],
+      "startup_s": 48.041282176971436,
+      "gpu_mem_used_mib": 19378
+    },
+    "chunk4096": {
+      "flags": [
+        "--max-num-batched-tokens",
+        "4096"
+      ],
+      "startup_s": 51.01095104217529,
+      "gpu_mem_used_mib": 19254
+    }
+  }
+}
